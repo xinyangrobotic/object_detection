@@ -8,9 +8,9 @@ from keras.models import load_model
 from yolov3.model import yolo_eval
 from utils.yolo_utils import *
 
-def image_detection(sess, image_path, image_file):
+def image_detection(sess, image_path, image_file, image_):
     # Preprocess your image
-    image, image_data = preprocess_image(image_path + image_file, model_image_size = (416, 416))
+    image, image_data = preprocess_image(image_, model_image_size = (416, 416))
     
     # Run the session with the correct tensors and choose the correct placeholders in the feed_dict.
     # You'll need to use feed_dict={yolo_model.input: ... , K.learning_phase(): 0})
@@ -22,6 +22,8 @@ def image_detection(sess, image_path, image_file):
     colors = generate_colors(class_names)
     # Draw bounding boxes on the image file
     image = draw_boxes(image, out_scores, out_boxes, out_classes, class_names, colors)
+    cv2.imshow("process", image)
+    cv2.waitKey(100)
     # Save the predicted bounding box on the image
     #image.save(os.path.join("out", image_file), quality=90)
     cv2.imwrite(os.path.join("out", image_file), image, [cv2.IMWRITE_JPEG_QUALITY, 90])
@@ -36,12 +38,15 @@ if __name__ == "__main__":
     
     class_names = read_classes("model_data/yolo_coco_classes.txt")
     anchors = read_anchors("model_data/yolov3_anchors.txt")
-
+    cap = cv2.VideoCapture("images/run.mp4")
+    while(1):
     # image detection
-    image_file = "dog.jpg"
-    image_path = "images/"
-    image_shape = np.float32(cv2.imread(image_path + image_file).shape[:2])
 
-    scores, boxes, classes = yolo_eval(yolov3.output, anchors, len(class_names), image_shape=image_shape)
-    out_scores, out_boxes, out_classes = image_detection(sess, image_path, image_file)
-    
+        image_file = "dog.jpg"
+        image_path = "images/"
+        ret, frame = cap.read()
+        # image_shape = np.float32(cv2.imread(image_path + image_file).shape[:2])
+        image_shape = np.float32(frame.shape[:2])
+
+        scores, boxes, classes = yolo_eval(yolov3.output, anchors, len(class_names), image_shape=image_shape)
+        out_scores, out_boxes, out_classes = image_detection(sess, image_path, image_file, frame)
